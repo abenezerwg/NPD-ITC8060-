@@ -6,7 +6,7 @@ import socket
 import struct
 import pprint
 import  sys
-import route
+
 
 
 VERSION_OFF     = 0
@@ -32,7 +32,7 @@ IP_PACKET_OFF   = VERSION_OFF
 UDP_PACKET_OFF  = SRC_PORT_OFF
 def parse(data):
     packet = {}
-    packet['version']       = data[VERSION_OFF] >> 4
+    packet['version']       = data[VERSION_OFF] >> 1
     packet['TTL']           = data[TTL_OFF]
     packet['Protocol']      = data[PROTOCOL_OFF]
     packet['Checksum']      = (data[IP_CHECKSUM_OFF] << 8) + data[IP_CHECKSUM_OFF + 1]
@@ -46,12 +46,7 @@ def parse(data):
     return packet
 
 def recver(_socket, listen):
-	"""
-	Receive message
-	:param _socket:
-	:param listen: Listening port
-	:return:
-	"""
+	
 	zero = 0
 	protocol = 17
 	serverSocket.bind(("", listen))	
@@ -71,15 +66,9 @@ def recver(_socket, listen):
 
 
 def sender(_socket, dest_addr,src_addr=('127.0.0.1', 35869)):
-	"""
-	Send Message
-	:param _socket:
-	:param dest_addr: Destination IP address
-	:param dest_port: Desination port
-	:return:
-	"""
+	
 	while True:
-		
+
 		data = input("Enter Message ")	
 		src_ip, dest_ip = ip2int(src_addr[0]), ip2int(dest_addr[0])
 		src_ip = struct.pack('!4B', *src_ip)
@@ -148,7 +137,7 @@ if __name__ == '__main__':
 
 	listen_port = 9999
 	send_to_addr = input("The other's IP: ")
-	send_data = input("Enter Message ")
+	
 	# Create socket
 	serverSocket = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_UDP)
 	serverSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, True)
