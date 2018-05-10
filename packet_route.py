@@ -25,20 +25,20 @@ class route:
         self.active_hist = {}    # for the timer
         self.dead_links = [] # node pairs for link taken offline by either node
     
-    def parse(self,data):
-        packet = {}
-        packet['version']       =  4
-        packet['TTL']           = 30
-        packet['type']           = 0x02        
-        packet['src_ip']        = '.'.join(list(map(str, [data[x] for x in range(12, 16)])))
-        packet['dest_ip']       = '.'.join(list(map(str, [data[x] for x in range(16, 20)])))
-        packet['src_port']      = (data[20] << 8) + data[21]
-        packet['dest_port']     = (data[22] << 8) + data[23]
-        packet['udp_length']    = (data[24] << 8) + data[25]
-        packet['UDP_checksum']  = (data[26] << 8) + data[27]
-        packet['data']          = ''.join(list(map(chr, [data[28 + x] for x in range(0, packet['udp_length'] - 8)])))
+    # def parse(self,data):
+    #     packet = {}
+    #     packet['version']       =  4
+    #     packet['TTL']           = 30
+    #     packet['type']           = 0x02        
+    #     packet['src_ip']        = '.'.join(list(map(str, [data[x] for x in range(12, 16)])))
+    #     packet['dest_ip']       = '.'.join(list(map(str, [data[x] for x in range(16, 20)])))
+    #     packet['src_port']      = (data[20] << 8) + data[21]
+    #     packet['dest_port']     = (data[22] << 8) + data[23]
+    #     packet['udp_length']    = (data[24] << 8) + data[25]
+    #     packet['UDP_checksum']  = (data[26] << 8) + data[27]
+    #     packet['data']          = ''.join(list(map(chr, [data[28 + x] for x in range(0, packet['udp_length'] - 8)])))
         
-        return packet
+    #     return packet
 
     def msg_prompt(self):
         sys.stdout.write('Msg: > ')
