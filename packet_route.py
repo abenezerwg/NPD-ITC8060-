@@ -8,6 +8,8 @@ import copy
 import signal
 import struct
 from main import main
+from encryption import encrypt
+encrypt =encrypt()
 main= main()
 class route:
     
@@ -293,8 +295,9 @@ class route:
 
     def tell_neighbor(self,sock, payload):
             package = json.dumps(payload)
+            msg = encrypt.encrypt(self.email,package)
             for neighbor in self.neighbors:
                 temp = neighbor.split(":")
-                sock.sendto(package.encode('UTF-8'), (temp[0], int(temp[1])))
+                sock.sendto(msg, (temp[0], int(temp[1])))
                
         

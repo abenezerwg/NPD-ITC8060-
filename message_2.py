@@ -4,12 +4,15 @@ import socket
 import struct
 import sys
 import json
+import os
 import select
 from main import main
 from packet_route import route
+from encryption import encrypt
 
 main = main()
 router= route()
+encrypt = encrypt()
 RECV_BUFFER=1024
 zero = 0
 protocol = 17
@@ -33,6 +36,7 @@ def recieve_msg(_socket,listen,peer_port,peer_ip,cost,node_id):
     print ("bfclient running at address [%s] on port [%s]" % (str(host), listen))
     # router.update_timer(_socket,route.time_out)
     # router.node_timer(_socket,route.time_out)
+    os.system("clear")
     option =main.menu()
     if option==1:
         router.msg_prompt()
@@ -54,8 +58,10 @@ def recieve_msg(_socket,listen,peer_port,peer_ip,cost,node_id):
             if sock == _socket:
                 data, addr = _socket.recvfrom(RECV_BUFFER)
                 if data:
-                    msg = json.loads(data.decode('utf-8'))
-                    router.msg_handler(serverSocket,msg, addr)
+                    print(data)
+                    data = encrypt.decrypt(node_id,data)
+                    data = json.loads(data.decode('utf-8'))
+                    router.msg_handler(serverSocket,data, addr)
                     time.sleep(0.1)
                 else:
                     print ("[Error] 0 bytes received.")
@@ -70,24 +76,15 @@ def recieve_msg(_socket,listen,peer_port,peer_ip,cost,node_id):
                     router.prompt()
     _socket.close()
 
-def private_msg(data):
-    packet = router.parse(data)
-    ip_addr = struct.pack('!8B', *[data[x] for x in range(12, 12 + 8)])
-    udp_psuedo = struct.pack('!BB5H', zero, protocol, packet['udp_length'], packet['src_port'], packet['dest_port'], packet['udp_length'], 0)
-    verify = router.verify_checksum(ip_addr + udp_psuedo + bytes(packet['data'].encode('utf-8')), packet['UDP_checksum'])
-    if verify == 0xFFFF:
-        print( packet['data'])
-        time.sleep(0.1)
-    else:
-        print('Checksum Error!Packet is discarded')
 
 
 if __name__ == '__main__':
+    os.system("clear")
     peer_ip = main.login()
     peer_port=main.peer_port()
     src_port = main.src_port()
     dest_port = main.dest_port()
-    node_id= main.node_id()
+    node_id= encrypt.hasher()
     cost = main.cost_matrix()
     time_out= main.time_out()
     serverSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
