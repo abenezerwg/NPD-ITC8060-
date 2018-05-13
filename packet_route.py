@@ -7,9 +7,10 @@ import time
 import copy
 import signal
 import struct
+# from __future__ import division
+import sys
 from main import main
-from encryption import encrypt
-encrypt =encrypt()
+from encryption import Encoder
 main= main()
 class route:
     
@@ -25,23 +26,7 @@ class route:
         self.adjacent_links = {} # maps neighbor_id to edge cost for every link in topography
         self.old_links = {}      # maps previously active neighbor nodes to their link costs
         self.active_hist = {}    # for the timer
-        self.dead_links = [] # node pairs for link taken offline by either node
-    
-    # def parse(self,data):
-    #     packet = {}
-    #     packet['version']       =  4
-    #     packet['TTL']           = 30
-    #     packet['type']           = 0x02        
-    #     packet['src_ip']        = '.'.join(list(map(str, [data[x] for x in range(12, 16)])))
-    #     packet['dest_ip']       = '.'.join(list(map(str, [data[x] for x in range(16, 20)])))
-    #     packet['src_port']      = (data[20] << 8) + data[21]
-    #     packet['dest_port']     = (data[22] << 8) + data[23]
-    #     packet['udp_length']    = (data[24] << 8) + data[25]
-    #     packet['UDP_checksum']  = (data[26] << 8) + data[27]
-    #     packet['data']          = ''.join(list(map(chr, [data[28 + x] for x in range(0, packet['udp_length'] - 8)])))
         
-    #     return packet
-
     def msg_prompt(self):
         sys.stdout.write('Msg: > ')
         sys.stdout.flush()
@@ -60,7 +45,7 @@ class route:
             checksum += w
             checksum = (checksum >> 16) + (checksum & 0xFFFF)
     
-    def update_neighbor(self,recvSock): #send this node's routing table to all neighbors
+    def neigh_update(self,recvSock): #send this node's routing table to all neighbors
         for neighbor in copy.deepcopy(self.neighbors):
             temp = neighbor.split(':') 
             addr = (temp[0], int(temp[1]))#change to hex-decimal int base 16
@@ -77,26 +62,27 @@ class route:
             msg=json.dumps(send_dict).encode('utf-8')
             recvSock.sendto(msg, addr) 
 
-    # thread to periodically send updates
-    def update_timer(self,recvSock,time_out):
-        self.update_neighbor(recvSock)
+    # thread for Each node to sends whole table every 30 seconds 
+    # with flag RoutingFull.
+    def time_update(self,recvSock,time_out):
+        self.neigh_update(recvSock)
         try:
-            t = threading.Timer(self.time_out, self.update_timer, [self.time_out])
+            t = threading.Timer(self.time_out, self.time_update, [self.time_out])
             t.setDaemon(True)
             t.start()
         except:
             pass
             #Handle incomming comands from the terminal
-    def cmd_handler(self,recvSock,args):
+    def cmd(self,recvSock,args):
         if args[0] == "HELLO":
             content = ' '.join(args[1:(len(args))])
             self.auth_hello(recvSock,self.self_id, content)
         elif args[0] == "SHOWRT":
-            self.show_rt(self.routing_table)
+            self.show_routingT(self.routing_table)
         elif args[0] == "PMSG":
             dst_id = ' '.join(args[1:2])
             content = ' '.join(args[2:(len(args))])
-            self.send_prv_msg(recvSock,self.self_id,dst_id,content)
+            self.send_prv_msg(recvSock,dst_id,content)
         elif args[0] == "CLOSE":
             self.close()
         elif args[0] == "MENU":
@@ -109,7 +95,7 @@ class route:
    
     def close(self):
         sys.exit("(%s) going offline." % self.self_id)
-    def show_rt(self,routin_table):
+    def show_routingT(self,routin_table):
         t_log = time.strftime('%H:%M:%S', time.localtime(time.time()))
         print ("[%s] Distance vector list for [%s] is:" % (str(t_log), self.self_id))
         for node in self.routing_table:
@@ -146,7 +132,7 @@ class route:
                             recvSock.sendto(json.dumps(send_dict), (temp[0], int(temp[1])))
 
                     else:
-                        self.update_neighbor(recvSock)
+                        self.neigh_update(recvSock)
 
         # run thread every 3 seconds (timeout threshold will be multiple of 3)
         try:
@@ -199,7 +185,8 @@ class route:
 
             for node in rcv_data['routing_table']:
                 if node != self.self_id:
-                    # discover a new node that entered network regardless of if this node has contacted us directly
+                    # discover a new node that entered network 
+                    # regardless of if this node has contacted us directly
                     if node not in self.routing_table:
                         self.routing_table[node] = {
                         'cost': self.INFINITY,
@@ -207,7 +194,7 @@ class route:
                         }
                         table_changed = True
 
-                    # --- BELLMAN FORD ALGORITHM --- #
+                    # BELLMAN FORD ALGORITHM
                     for dest in self.routing_table:
                         old_cost = self.routing_table[dest]['cost']
                         if addr in self.neighbors and dest in self.neighbors[addr]:
@@ -219,11 +206,8 @@ class route:
                                 self.table_changed = True
 
                 if table_changed:
-                    self.update_neighbor(recvSock)
+                    self.neigh_update(recvSock)
                     table_changed = False
-        #Authorize first time
-        # ---- RECEIVED TWEET --- #
-        # extra feature here. retweets all tweets. is not a chat room but sometimes you have a custom message.
 
         elif rcv_data['type'] == 0x02:
             if rcv_data['sender'] != self.self_id:
@@ -260,7 +244,7 @@ class route:
                         self.tell_neighbor(recvSock, send_dict)
 
             else:
-                self.update_neighbor(recvSock)
+                self.neigh_update(recvSock)
     
     
     def ip2int(self,ip_addr):
@@ -281,13 +265,26 @@ class route:
         checksum = (checksum >> 16) + (checksum & 0xFFFF)
         checksum = ~checksum&0xFFFF
         return checksum	
-    def send_prv_msg(self,recvSock,self_id,dst_id,send_msg):
-        temp = self_id.split(":")
+    
+    def get_chunks(self,file_size):
+        chunk_start = 0
+        chunk_size = 100  # 100 bytes
+        while chunk_start + chunk_size < file_size:
+            yield(chunk_start, chunk_size)
+            chunk_start += chunk_size
+
+        final_chunk_size = file_size - chunk_start
+        yield(chunk_start, final_chunk_size)
+
+    def send_prv_msg(self,recvSock,dst_id,send_msg):
+        temp = self.self_id.split(":")
+        self_id=temp[0]
         dest_ip = self.ip2int(dst_id)
         dest_port = main.dest_port()
-        src_port = main.src_port()
+        src_port = temp[1]
         email= self.email
         t_log = time.strftime('%H:%M:%S', time.localtime(time.time()))
+        print(self.self_id)
         msg = '['+str(t_log)+'] ' + "@" + self_id + ": " + str(send_msg)
         send_dict = { 'type': 0x02, 'msg': msg, 'sender': self_id,\
         'reciever': dest_ip,'src_port': src_port, 'dest_port':dest_port,'email':email }
@@ -295,7 +292,7 @@ class route:
 
     def tell_neighbor(self,sock, payload):
             package = json.dumps(payload)
-            msg = encrypt.encrypt(self.email,package)
+            msg = Encoder(self.email,True).encrypt(package)
             for neighbor in self.neighbors:
                 temp = neighbor.split(":")
                 sock.sendto(msg, (temp[0], int(temp[1])))

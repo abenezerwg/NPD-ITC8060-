@@ -1,41 +1,26 @@
-import base64
-import sys, socket, select
 from Crypto.Cipher import AES
-import os
-import hashlib
-import signal
+from Crypto.Hash import MD5
+import base64
 
-# os.system("clear")
-class encrypt:
-    def hasher(self):
-        email =input("Please input your email: ")
-        mail=email.encode('utf-8')
-        hash_object = hashlib.sha512(mail)
-        hexd = hash_object.hexdigest()
-        hexd_b= hexd.encode('utf-8')
-        hash_object = hashlib.md5(hexd_b)
-        hex_dig = hash_object.hexdigest()
-        return hex_dig
+class Encoder():
+    # block_size
+    # the block size for the cipher object; must be 16, 24, or 32 for AES
+    # padding
+    # the character used for padding--with a block cipher such as AES, the value
+    def __init__(self, password, useBase64 = True, block_size = 32, padding = '{'):
+        self.useBase64, self.block_size, self.padding = useBase64, block_size, padding
+        secret = MD5.new()
+        secret.update(password.encode('utf-8'))
+        self.cipher = AES.new(secret.hexdigest())
 
-    def encrypt(self,secret,data):
-        BLOCK_SIZE = 32
-        PADDING = '{'
-        pad = lambda s: s + (BLOCK_SIZE - len(s) % BLOCK_SIZE) * PADDING
-        EncodeAES = lambda c, s: base64.b64encode(c.encrypt(pad(s)))
-        cipher = AES.new(secret)
-        encoded = EncodeAES(cipher, data)
-        return encoded
+    def encrypt(self, value):
+        value += (self.block_size - len(value) % self.block_size) * self.padding 
+        result = self.cipher.encrypt(value)
+        if self.useBase64:
+            result = base64.standard_b64encode(result)
+        return result
 
-    def decrypt(self,secret,data):
-        data= data.decode('utf-8')
-        BLOCK_SIZE = 32
-        PADDING = '{'
-        pad = lambda s: s + (BLOCK_SIZE - len(s) % BLOCK_SIZE) * PADDING
-        DecodeAES = lambda c, e: c.decrypt(base64.b64decode(e)).rstrip(PADDING)
-        cipher = AES.new(secret)
-        print(data)
-        decoded = DecodeAES(cipher, data)
-        return decoded
-
-
-
+    def decrypt(self, value):
+        if self.useBase64:
+            value = base64.b64decode(value)
+        return self.cipher.decrypt(value).decode('utf-8').rstrip(self.padding)

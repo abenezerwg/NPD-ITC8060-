@@ -8,14 +8,14 @@ import os
 import select
 from main import main
 from packet_route import route
-from encryption import encrypt
+from encryption import Encoder
 
 main = main()
 router= route()
-encrypt = encrypt()
 RECV_BUFFER=1024
 zero = 0
 protocol = 17
+conn=[]
 def recieve_msg(_socket,listen,peer_port,peer_ip,cost,node_id):
     _socket.bind(('', listen))
     host = socket.gethostbyname(socket.gethostname())
@@ -58,9 +58,8 @@ def recieve_msg(_socket,listen,peer_port,peer_ip,cost,node_id):
             if sock == _socket:
                 data, addr = _socket.recvfrom(RECV_BUFFER)
                 if data:
-                    print(data)
-                    data = encrypt.decrypt(node_id,data)
-                    data = json.loads(data.decode('utf-8'))
+                    data =  Encoder(node_id,False).decrypt(data)
+                    data = json.loads(data)
                     router.msg_handler(serverSocket,data, addr)
                     time.sleep(0.1)
                 else:
@@ -69,7 +68,7 @@ def recieve_msg(_socket,listen,peer_port,peer_ip,cost,node_id):
                 data = sys.stdin.readline().rstrip()
                 if len(data) > 0:
                     data_list = data.split()
-                    router.cmd_handler(serverSocket,data_list)
+                    router.cmd(serverSocket,data_list)
                     router.prompt()
                 else:
                     sys.stdout.flush()
@@ -84,7 +83,7 @@ if __name__ == '__main__':
     peer_port=main.peer_port()
     src_port = main.src_port()
     dest_port = main.dest_port()
-    node_id= encrypt.hasher()
+    node_id= main.node_id()
     cost = main.cost_matrix()
     time_out= main.time_out()
     serverSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
