@@ -16,6 +16,8 @@ RECV_BUFFER=1024
 zero = 0
 protocol = 17
 conn=[]
+chunk=[]
+d_Chunk=[]
 def recieve_msg(_socket,listen,peer_port,peer_ip,cost,node_id):
     _socket.bind(('', listen))
     host = socket.gethostbyname(socket.gethostname())
@@ -57,13 +59,15 @@ def recieve_msg(_socket,listen,peer_port,peer_ip,cost,node_id):
         for sock in read_sockets:
             if sock == _socket:
                 data, addr = _socket.recvfrom(RECV_BUFFER)
-                if data:
-                    data =  Encoder(node_id,False).decrypt(data)
-                    data = json.loads(data)
-                    router.msg_handler(serverSocket,data, addr)
-                    time.sleep(0.1)
-                else:
-                    print ("[Error] 0 bytes received.")
+                chunk.append(data)  
+                for i in chunk:
+                    print(i)
+                    data =  Encoder(node_id,False).decrypt(i)
+                    d_Chunk.append(i)
+                    # data = json.loads(i)
+                    # router.msg_handler(serverSocket,data, addr)
+                    # time.sleep(0.1)
+                print(d_Chunk)
             else:
                 data = sys.stdin.readline().rstrip()
                 if len(data) > 0:
@@ -86,7 +90,7 @@ if __name__ == '__main__':
     node_id= main.node_id()
     cost = main.cost_matrix()
     time_out= main.time_out()
-    serverSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    serverSocket = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
     serverSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, True)
     recieve_msg(serverSocket,src_port,peer_port,peer_ip,cost,node_id)
    

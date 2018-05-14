@@ -266,15 +266,12 @@ class route:
         checksum = ~checksum&0xFFFF
         return checksum	
     
-    def get_chunks(self,file_size):
-        chunk_start = 0
-        chunk_size = 100  # 100 bytes
-        while chunk_start + chunk_size < file_size:
-            yield(chunk_start, chunk_size)
-            chunk_start += chunk_size
-
-        final_chunk_size = file_size - chunk_start
-        yield(chunk_start, final_chunk_size)
+   
+   
+    def chunks(self,lst, n):
+        "Yield successive n-sized chunks from lst"
+        for i in range(0, len(lst), n):
+            yield lst[i:i+n]
 
     def send_prv_msg(self,recvSock,dst_id,send_msg):
         temp = self.self_id.split(":")
@@ -291,10 +288,13 @@ class route:
         self.tell_neighbor(recvSock,send_dict)
 
     def tell_neighbor(self,sock, payload):
+            i=0
             package = json.dumps(payload)
             msg = Encoder(self.email,True).encrypt(package)
+            #     print(chunk)
             for neighbor in self.neighbors:
                 temp = neighbor.split(":")
-                sock.sendto(msg, (temp[0], int(temp[1])))
-               
-        
+                for chunk in self.chunks(msg, 10):
+                    sock.sendto(chunk, (temp[0], int(temp[1])))
+                    # print(chunk)
+                        # i=i+1
