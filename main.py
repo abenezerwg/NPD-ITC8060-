@@ -38,7 +38,7 @@ class main:
     def src_port(self):
         return 9999
     def dest_port(self):
-        return 9999
+        return 8888
     def peer_port(self):
         return '9999'
     def cost_matrix(self):

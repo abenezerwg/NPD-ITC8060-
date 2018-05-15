@@ -215,9 +215,8 @@ class route:
                 print ('\n' + rcv_data['msg'])
                 send_dict = { 'type': 'update', 'msg': rcv_data['msg'], 'sender': rcv_data['sender'] }
                 self.tell_neighbor(recvSock, send_dict)
-                self.prompt()
-
-
+                self.msg_prompt()
+                
         # ------------ RECEIVED CLOSE MESSAGE --------------------- #
         elif rcv_data['type'] == 'close':
 
@@ -281,10 +280,11 @@ class route:
         src_port = temp[1]
         email= self.email
         t_log = time.strftime('%H:%M:%S', time.localtime(time.time()))
-        print(self.self_id)
+        # print(self.self_id)
         msg = '['+str(t_log)+'] ' + "@" + self_id + ": " + str(send_msg)
         send_dict = { 'type': 0x02, 'msg': msg, 'sender': self_id,\
-        'reciever': dest_ip,'src_port': src_port, 'dest_port':dest_port,'email':email }
+        'reciever': dest_ip,'src_port': src_port, 'dest_port':dest_port,'email':email,'time':t_log}
+       
         self.tell_neighbor(recvSock,send_dict)
 
     def tell_neighbor(self,sock, payload):
@@ -295,8 +295,12 @@ class route:
             for neighbor in self.neighbors:
                 temp = neighbor.split(":")
                 for chunk in self.chunks(package, 100):
-                    sock.sendto(chunk.encode('utf-8'), (temp[0], int(temp[1])))
-                    # print(chunk)
-                        # i=i+1
+                    try:
+                        sock.sendto(chunk.encode('utf-8'), (temp[0], int(temp[1])))
+                        print("sent: ",chunk)
+                    except:
+                        print("can not send data")
                 
+            
+                        # i=i+1
                     
