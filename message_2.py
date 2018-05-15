@@ -20,6 +20,7 @@ chunk=[]
 d_Chunk=[]
 def recieve_msg(_socket,listen,peer_port,peer_ip,cost,node_id):
     m_data=""
+    
     _socket.bind(('', listen))
     host = socket.gethostbyname(socket.gethostname())
     router.self_id = str(host) + ":" + str(listen)
@@ -58,28 +59,32 @@ def recieve_msg(_socket,listen,peer_port,peer_ip,cost,node_id):
         except socket.error:
             break
         for sock in read_sockets:
-            
             if sock == _socket:
-                data, addr = _socket.recvfrom(RECV_BUFFER) 
-                chunk.append(data)
-                merge_data=merge(chunk)
-                try:
-                    data = json.loads(merge_data)
-                    router.msg_handler(serverSocket,data, addr)
-                    time.sleep(0.1)
-                except:
-                    pass 
+                data, addr = _socket.recvfrom(RECV_BUFFER)
+                if data:
+                    chunk.append(data)
+                    merge_data=merge(chunk)  
+                    try:
+                        data = json.loads(merge_data)
+                        chunk[:]=[]
+                        router.msg_handler(_socket,data, addr)
+                        time.sleep(0.1)
+                    except:
+                        pass
+                else:
+                    print("no data recived!") 
                 
             else:
                 data = sys.stdin.readline().rstrip()
                 if len(data) > 0:
                     data_list = data.split()
-                    router.cmd(serverSocket,data_list)
-                    router.prompt()
+                    router.cmd(_socket,data_list)
+                    router.msg_prompt()
                 else:
                     sys.stdout.flush()
-                    router.prompt()
+                    router.msg_prompt()
     _socket.close()
+    
 
 def merge(data):
     m_data=""
@@ -99,8 +104,13 @@ if __name__ == '__main__':
     time_out= main.time_out()
     serverSocket = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
     serverSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, True)
-    recieve_msg(serverSocket,src_port,peer_port,peer_ip,cost,node_id)
-   
+    t_recv = threading.Thread(target=recieve_msg, args=(serverSocket,src_port,peer_port,peer_ip,cost,node_id))
+    t_recv.start()
+    
+    
+
+
+    
 
 
 
