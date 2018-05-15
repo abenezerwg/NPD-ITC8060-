@@ -288,13 +288,15 @@ class route:
         self.tell_neighbor(recvSock,send_dict)
 
     def tell_neighbor(self,sock, payload):
-            i=0
+        
             package = json.dumps(payload)
-            msg = Encoder(self.email,True).encrypt(package)
+            # msg = Encoder(self.email,True).encrypt(package)
             #     print(chunk)
             for neighbor in self.neighbors:
                 temp = neighbor.split(":")
-                for chunk in self.chunks(msg, 10):
-                    sock.sendto(chunk, (temp[0], int(temp[1])))
+                for chunk in self.chunks(package, 100):
+                    sock.sendto(chunk.encode('utf-8'), (temp[0], int(temp[1])))
                     # print(chunk)
                         # i=i+1
+                
+                    

@@ -34,7 +34,6 @@ class main:
         email =input("Please input your email: ")
         mail =hashlib.md5(email.encode('utf-8'))
         hash_mail = mail.hexdigest()
-        print(hash_mail)
         return hash_mail
     def src_port(self):
         return 9999

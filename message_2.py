@@ -19,6 +19,7 @@ conn=[]
 chunk=[]
 d_Chunk=[]
 def recieve_msg(_socket,listen,peer_port,peer_ip,cost,node_id):
+    m_data=""
     _socket.bind(('', listen))
     host = socket.gethostbyname(socket.gethostname())
     router.self_id = str(host) + ":" + str(listen)
@@ -57,17 +58,18 @@ def recieve_msg(_socket,listen,peer_port,peer_ip,cost,node_id):
         except socket.error:
             break
         for sock in read_sockets:
+            
             if sock == _socket:
-                data, addr = _socket.recvfrom(RECV_BUFFER)
-                chunk.append(data)  
-                for i in chunk:
-                    print(i)
-                    data =  Encoder(node_id,False).decrypt(i)
-                    d_Chunk.append(i)
-                    # data = json.loads(i)
-                    # router.msg_handler(serverSocket,data, addr)
-                    # time.sleep(0.1)
-                print(d_Chunk)
+                data, addr = _socket.recvfrom(RECV_BUFFER) 
+                chunk.append(data)
+                merge_data=merge(chunk)
+                try:
+                    data = json.loads(merge_data)
+                    router.msg_handler(serverSocket,data, addr)
+                    time.sleep(0.1)
+                except:
+                    pass 
+                
             else:
                 data = sys.stdin.readline().rstrip()
                 if len(data) > 0:
@@ -79,6 +81,11 @@ def recieve_msg(_socket,listen,peer_port,peer_ip,cost,node_id):
                     router.prompt()
     _socket.close()
 
+def merge(data):
+    m_data=""
+    for x in data:
+        m_data +=x.decode('utf-8')
+    return m_data 
 
 
 if __name__ == '__main__':
