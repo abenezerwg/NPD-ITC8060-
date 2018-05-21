@@ -2,7 +2,10 @@
 # requires pgpy >=0.4.0 (latest, as of 06/30/2016)
 import pgpy
 from pgpy.constants import PubKeyAlgorithm, KeyFlags, HashAlgorithm, SymmetricKeyAlgorithm, CompressionAlgorithm
- 
+"""
+  @01-05-2018
+Reference link : https://pythonexample.com/code/pgpy/
+"""
 class Encryption:
   @staticmethod
   def get_key(name, plain=False):

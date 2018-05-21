@@ -1,7 +1,17 @@
+"""
+       NPD
+       @09-05-2018
+"""
+
 import hashlib
 import socket
 from packet_route import route
 route = route()
+"""
+
+This part of the code mainly contains the view, and some controls
+
+"""
 class main:
     def login(self):
         print("!-------------------------!")

@@ -1,3 +1,8 @@
+
+"""
+       NPD
+       @01-05-2018
+"""
 import os
 import sys
 import socket
@@ -23,7 +28,7 @@ class route:
         self.routing_table = {}  # Dictionary for routing table it holds holds 'cost' and 'link'
         self.via_links = {}      # maps neighbpur ID to cost for every link in topography
         self.active_hist = {}    # for the timer
-    
+        #Prompt user for input for private Message
     def msg_prompt(self,_socket):
         dst_id = input("Input Destination Address: ")
         content = input("Input your message: ")
@@ -38,7 +43,6 @@ class route:
             for node in rt_copy: # our own routing table
                 send_dict['routing_table'][node] = rt_copy[node]
                 #using deepcopy to keep this code thread-safe
-
                 #-- POISONED REVERSE IMPLEMENTATION --#
                 if node != neighbor and rt_copy[node]['link'] == neighbor:
                     send_dict['routing_table'][node]['cost'] = self.INFINITY
@@ -72,28 +76,12 @@ class route:
         except:
             pass
             #Handle incomming comands from the terminal
-    def cmd(self,recvSock,args):
-        if args[0] == "HELLO":
-            content = ' '.join(args[1:(len(args))])
-            self.auth_hello(recvSock,self.self_id, content)
-        elif args[0] == "SHOWRT":
-            self.show_routingT(self.routing_table)
-        elif args[0] == "PMSG":
-            dst_id = ' '.join(args[1:2])
-            content = ' '.join(args[2:(len(args))])
-            self.send_prv_msg(recvSock,dst_id,content)
-        elif args[0] == "CLOSE":
-            self.close()
-        elif args[0] == "MENU":
-            pass
     def auth_hello(self,recvSock,self_id, message):
         t_log = t_log = time.strftime('%H:%M:%S', time.localtime(time.time()))
         msg = '['+str(t_log)+'] ' + "@" + self_id + ": " + str(message)
         send_dict = {'type': 'update', 'routing_table': {},'msg':msg }
         self.tell_neighbor(recvSock, send_dict)
-   
-    def close(self):
-        sys.exit("(%s) going offline." % self.self_id)
+  
     def show_routingT(self,routin_table):
         t_log = time.strftime('%H:%M:%S', time.localtime(time.time()))
         print("---------- Routing Table --------------------------------")

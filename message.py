@@ -1,3 +1,8 @@
+
+"""
+       NPD
+       @01-05-2018
+"""
 import threading
 import time
 import socket
@@ -69,18 +74,12 @@ def recieve_msg(_socket,listen,peer_port,peer_ip,cost,node_id):
                         pass
                 else:
                     print("no data recived!") 
-                
+                #else if there is no data go to the main menu
             else:
-                data = sys.stdin.readline().rstrip()
-                if len(data) > 0:
-                    data_list = data.split()
-                    router.cmd(_socket,data_list)
-                    menu(_socket,conn,router.routing_table)
-                else:
-                    sys.stdout.flush()
-                    menu(_socket,conn,router.routing_table)
+                sys.stdout.flush()
+                menu(_socket,conn,router.routing_table)
     _socket.close()
-    
+#The main Menu 
 def menu(_socket,conn,routin_table):
     try:
         main.welcome()
@@ -90,6 +89,7 @@ def menu(_socket,conn,routin_table):
             \n!-3)ForFile Transfer-------!\
             \n!-4)List Users-------------!\
             \n!-5)Show Routing Table-----!\
+            \n!-6)To Close-----!\
             \n Choose:  "))
         print("!-------------------------!")
         if option == 1:
@@ -113,7 +113,7 @@ def route_update(_socket,timeout_interval=10):
         time = threading.Timer(timeout_interval, route_update, [timeout_interval])
         time.setDaemon(True)
         time.start()
-        
+#Merge byte data on the chunk list and return data
 def merge(data):
     m_data=b''
     for x in data:
