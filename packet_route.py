@@ -1,13 +1,16 @@
+import os
 import sys
 import socket
 import select
+import pgpy
 import json
 import threading
 import time
 import copy
 import signal
 import struct
-from encryption import Encoder
+from encryption import Encryption
+msg_Enc=Encryption()#Instantiate the Encryption class "to be used latter"
 class route:
     
     def __init__(self):
@@ -43,23 +46,21 @@ class route:
                 _socket.sendto(json.dumps(send_dict).encode('utf-8'), addr)
             except:
                 pass
-    def neigh_update(self,recvSock): #send this node's routing table to all neighbors
+    def neigh_update(self,recvSock): #send this node's routing table to its neighbors
         for neighbor in copy.deepcopy(self.neighbour):
             temp = neighbor.split(':') 
-            addr = (temp[0], int(temp[1]))#change to hex-decimal int base 16
+            addr = (temp[0], int(temp[1]))
 
             send_dict = {'type': 'update', 'routing_table': {}, }
             rt_copy = copy.deepcopy(self.routing_table)
             for node in rt_copy: # our own routing table
                 send_dict['routing_table'][node] = rt_copy[node]
                 #using deepcopy to keep this code thread-safe
-
                 #-- POISONED REVERSE IMPLEMENTATION --#
                 if node != neighbor and rt_copy[node]['link'] == neighbor:
                     send_dict['routing_table'][node]['cost'] = self.INFINITY
             msg=json.dumps(send_dict).encode('utf-8')
             recvSock.sendto(msg, addr) 
-
     # thread for Each node to sends whole table every 30 seconds 
     # with flag RoutingFull.
     def time_update(self,recvSock,time_out):
@@ -200,16 +201,14 @@ class route:
                         self.tell_neighbor(recvSock, send_dict)
             else:
                 self.neigh_update(recvSock)
-    
     def ip2int(self,ip_addr):
         if ip_addr == 'localhost':
             ip_addr = '127.0.0.1'
         return [int(x) for x in ip_addr.split('.')]
     def chunks(self,lst, n):
-        "Yield successive n-sized chunks from lst"
+        #returns successive n-sized chunks from lst
         for i in range(0, len(lst), n):
             yield lst[i:i+n]
-
     def send_prv_msg(self,recvSock,dst_id,send_msg):
         temp = self.self_id.split(":")
         self_id=temp[0]
@@ -234,11 +233,19 @@ class route:
                 sock.send(send_dict)
     def tell_neighbor(self,sock, payload):
             package = json.dumps(payload)
+            #Let us Encrypt the whole message before chunking and sending it
+            if not os.path.isfile("first.asc"):
+                # generate keys first
+                msg_Enc.generate_certificates()
+            try:
+                enc_package= msg_Enc.encrypt(package)
+            except pgpy.errors.PGPError:
+                print('Encryption failed!')
             for neighbor in self.neighbour:
                 temp = neighbor.split(":")
-                for chunk in self.chunks(package, 100):
+                for chunk in self.chunks(enc_package, 100):
                     try:
-                        sock.sendto(chunk.encode('utf-8'), (temp[0], int(temp[1])))           
+                        sock.sendto(chunk, (temp[0], int(temp[1])))      
                     except:
                         print("can not send data")
                     

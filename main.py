@@ -25,7 +25,7 @@ class main:
     def dest_port(self):
         return 9999
     def peer_port(self):
-        return '8888'
+        return '9999'
     def cost_matrix(self):
         cost= int(input("Please input link cost of the node: "))
         return cost

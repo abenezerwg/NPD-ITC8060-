@@ -8,26 +8,22 @@ import os
 import select
 from main import main
 from packet_route import route
-from encryption import Encoder
-
-main = main()
-router= route()
+from encryption import Encryption
+pgp = Encryption()#Instantiate the Encryption class "to be used latter"
+main = main()#Instantiate the main class "to be used latter"
+router= route()#Instantiate the router class "to be used latter"
 RECV_BUFFER=1024
-zero = 0
-protocol = 17
 conn={}
 chunk=[]
 d_Chunk=[]
 def recieve_msg(_socket,listen,peer_port,peer_ip,cost,node_id):
-    m_data=""
-    
     _socket.bind(('', listen))
     host = socket.gethostbyname(socket.gethostname())
     router.self_id = str(host) + ":" + str(listen)
     #set neighbour IP and initialize routing table
     n_ip = socket.gethostbyname(peer_ip)
     neighbor_id = str(n_ip) + ":" + peer_port
-    #Fill routing data
+    #Fill node routing data
     router.routing_table[neighbor_id] = {}
     router.routing_table[neighbor_id]['cost'] = cost
     router.routing_table[neighbor_id]['link'] = neighbor_id
@@ -51,10 +47,21 @@ def recieve_msg(_socket,listen,peer_port,peer_ip,cost,node_id):
                 data, addr = _socket.recvfrom(RECV_BUFFER)
                 conn[addr] = node_id
                 if data:
+                    if not os.path.isfile("first.asc"):
+                        # generate keys first
+                        pgp.generate_certificates()
                     chunk.append(data)
-                    merge_data=merge(chunk)  
+                    merge_data=merge(chunk) 
                     try:
-                        data = json.loads(merge_data)
+                        """
+                        Decrypt the merged file a if there is data let's decrypt 
+                         it and load it to the json to be sent to msg_handler method
+                        """
+                        try:
+                            decrypted = pgp.decrypt(merge_data)
+                        except:
+                            pass
+                        data = json.loads(decrypted)
                         chunk[:]=[]
                         router.msg_handler(_socket,data, addr)
                         time.sleep(0.1)
@@ -108,9 +115,9 @@ def route_update(_socket,timeout_interval=10):
         time.start()
         
 def merge(data):
-    m_data=""
+    m_data=b''
     for x in data:
-        m_data +=x.decode('utf-8')
+        m_data +=x
     return m_data 
 
 if __name__ == '__main__':
