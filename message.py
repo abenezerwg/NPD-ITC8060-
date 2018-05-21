@@ -15,7 +15,7 @@ router= route()
 RECV_BUFFER=1024
 zero = 0
 protocol = 17
-conn=[]
+conn={}
 chunk=[]
 d_Chunk=[]
 def recieve_msg(_socket,listen,peer_port,peer_ip,cost,node_id):
@@ -32,24 +32,12 @@ def recieve_msg(_socket,listen,peer_port,peer_ip,cost,node_id):
     router.routing_table[neighbor_id]['cost'] = cost
     router.routing_table[neighbor_id]['link'] = neighbor_id
     router.routing_table[neighbor_id]['email'] = node_id
-    router.adjacent_links[neighbor_id] = cost
-    router.neighbors[neighbor_id] = {}
-    router.time_out=main.time_out()
+    router.via_links[neighbor_id] = cost
+    router.neighbour[neighbor_id] = {}
     router.email=node_id
-
-    print ("bfclient running at address [%s] on port [%s]" % (str(host), listen))
-    # router.update_timer(_socket,route.time_out)
-    # router.node_timer(_socket,route.time_out)
     os.system("clear")
-    option =main.menu()
-    if option==1:
-        router.msg_prompt()
-    elif option == 2:
-        router.msg_prompt()
-    elif option == 3:
-        pass
-    else:
-        router.msg_prompt()
+    menu(_socket,conn,router.routing_table)
+    route_update(serverSocket)
     while True:
         socket_list = [sys.stdin,_socket]
         try:
@@ -61,6 +49,7 @@ def recieve_msg(_socket,listen,peer_port,peer_ip,cost,node_id):
         for sock in read_sockets:
             if sock == _socket:
                 data, addr = _socket.recvfrom(RECV_BUFFER)
+                conn[addr] = node_id
                 if data:
                     chunk.append(data)
                     merge_data=merge(chunk)  
@@ -79,19 +68,50 @@ def recieve_msg(_socket,listen,peer_port,peer_ip,cost,node_id):
                 if len(data) > 0:
                     data_list = data.split()
                     router.cmd(_socket,data_list)
-                    router.msg_prompt()
+                    menu(_socket,conn,router.routing_table)
                 else:
                     sys.stdout.flush()
-                    router.msg_prompt()
+                    menu(_socket,conn,router.routing_table)
     _socket.close()
     
-
+def menu(_socket,conn,routin_table):
+    try:
+        main.welcome()
+        option=int(input("!-Please use\
+            ---!\n!-1)For Private msg--------!\
+            \n!-2)For Group message------!\
+            \n!-3)ForFile Transfer-------!\
+            \n!-4)List Users-------------!\
+            \n!-5)Show Routing Table-----!\
+            \n Choose:  "))
+        print("!-------------------------!")
+        if option == 1:
+            router.msg_prompt(_socket)
+        elif option == 2:
+            router.broadcast_msg(conn,_socket)
+        elif option == 3:
+            pass
+        elif option == 4:
+            pass
+        elif option == 5:
+            router.show_routingT(routin_table)
+        else:
+            print("Please input Correctly!")
+            menu(_socket,conn,routin_table)
+    except:
+        print("Error on Input!")
+        menu(_socket,conn,routin_table)
+def route_update(_socket,timeout_interval=10):
+        router.update_neighbor(_socket)
+        time = threading.Timer(timeout_interval, route_update, [timeout_interval])
+        time.setDaemon(True)
+        time.start()
+        
 def merge(data):
     m_data=""
     for x in data:
         m_data +=x.decode('utf-8')
     return m_data 
-
 
 if __name__ == '__main__':
     os.system("clear")
@@ -101,11 +121,12 @@ if __name__ == '__main__':
     dest_port = main.dest_port()
     node_id= main.node_id()
     cost = main.cost_matrix()
-    time_out= main.time_out()
+    time_out= 10
     serverSocket = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
     serverSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, True)
     t_recv = threading.Thread(target=recieve_msg, args=(serverSocket,src_port,peer_port,peer_ip,cost,node_id))
     t_recv.start()
+    
     
     
 
