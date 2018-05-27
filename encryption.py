@@ -1,5 +1,6 @@
 #!/usr/bin/python3.4
 # requires pgpy >=0.4.0 (latest, as of 06/30/2016)
+import warnings
 import pgpy
 from pgpy.constants import PubKeyAlgorithm, KeyFlags, HashAlgorithm, SymmetricKeyAlgorithm, CompressionAlgorithm
 """
@@ -42,6 +43,11 @@ class Encryption:
  
   @staticmethod
   def decrypt(data, key='first'):
+
     k = Encryption.get_key(key)
-    m = k.decrypt(pgpy.PGPMessage.from_blob(data))
-    return bytes(m._message.contents) if isinstance(m._message.contents, bytearray) else m._message.contents
+    with warnings.catch_warnings():
+      warnings.simplefilter("ignore")
+      m = k.decrypt(pgpy.PGPMessage.from_blob(data))
+      return bytes(m._message.contents) if isinstance(m._message.contents, bytearray) else m._message.contents
+
+  

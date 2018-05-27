@@ -4,6 +4,7 @@
        @01-05-2018
 """
 import threading
+import warnings
 import time
 import socket
 import struct
@@ -51,33 +52,30 @@ def recieve_msg(_socket,listen,peer_port,peer_ip,cost,node_id):
             if sock == _socket:
                 data, addr = _socket.recvfrom(RECV_BUFFER)
                 conn[addr] = node_id
-                if data:
-                    if not os.path.isfile("first.asc"):
-                        # generate keys first
-                        pgp.generate_certificates()
-                    chunk.append(data)
-                    merge_data=merge(chunk) 
-                    try:
-                        """
-                        Decrypt the merged file a if there is data let's decrypt 
-                         it and load it to the json to be sent to msg_handler method
-                        """
-                        try:
-                            decrypted = pgp.decrypt(merge_data)
-                        except:
-                            pass
+                if not os.path.isfile("first.asc"):
+                    # generate keys first
+                    pgp.generate_certificates()
+                chunk.append(data)
+                merge_data=merge(chunk)
+                try:
+                    """
+                    Decrypt the merged file a if there is data let's decrypt 
+                        it and load it to the json to be sent to msg_handler method
+                    """
+                    if merge_data:
+                        decrypted = pgp.decrypt(merge_data)
                         data = json.loads(decrypted)
                         chunk[:]=[]
                         router.msg_handler(_socket,data, addr)
                         time.sleep(0.1)
-                    except:
+                    else:
                         pass
-                else:
-                    print("no data recived!") 
-                #else if there is no data go to the main menu
-            else:
-                sys.stdout.flush()
+                except:
+                    pass
+            else: 
                 menu(_socket,conn,router.routing_table)
+                sys.stdout.flush()
+            
     _socket.close()
 #The main Menu 
 def menu(_socket,conn,routin_table):
@@ -97,7 +95,7 @@ def menu(_socket,conn,routin_table):
         elif option == 2:
             router.broadcast_msg(conn,_socket)
         elif option == 3:
-            pass
+            router.file_prompt(_socket)
         elif option == 4:
             pass
         elif option == 5:

@@ -34,6 +34,11 @@ class route:
         content = input("Input your message: ")
         self.send_prv_msg(_socket,dst_id,content)
         sys.stdout.flush()
+    def file_prompt(self,_socket):
+        dst_id = input("Input Destination Address: ")
+        filename = input("Input file name: ")
+        self.fileTransfer(_socket,dst_id,filename)
+        sys.stdout.flush()
     def update_neighbor(self,_socket): #send this node's routing table to all neighbors
         for neighbor in copy.deepcopy(self.neighbour):
             temp = neighbor.split(':')
@@ -50,25 +55,10 @@ class route:
                 _socket.sendto(json.dumps(send_dict).encode('utf-8'), addr)
             except:
                 pass
-    def neigh_update(self,recvSock): #send this node's routing table to its neighbors
-        for neighbor in copy.deepcopy(self.neighbour):
-            temp = neighbor.split(':') 
-            addr = (temp[0], int(temp[1]))
-
-            send_dict = {'type': 'update', 'routing_table': {}, }
-            rt_copy = copy.deepcopy(self.routing_table)
-            for node in rt_copy: # our own routing table
-                send_dict['routing_table'][node] = rt_copy[node]
-                #using deepcopy to keep this code thread-safe
-                #-- POISONED REVERSE IMPLEMENTATION --#
-                if node != neighbor and rt_copy[node]['link'] == neighbor:
-                    send_dict['routing_table'][node]['cost'] = self.INFINITY
-            msg=json.dumps(send_dict).encode('utf-8')
-            recvSock.sendto(msg, addr) 
     # thread for Each node to sends whole table every 30 seconds 
     # with flag RoutingFull.
     def time_update(self,recvSock,time_out):
-        self.neigh_update(recvSock)
+        self.update_neighbor(recvSock)
         try:
             t = threading.Timer(self.time_out, self.time_update, [self.time_out])
             t.setDaemon(True)
@@ -76,13 +66,8 @@ class route:
         except:
             pass
             #Handle incomming comands from the terminal
-    def auth_hello(self,recvSock,self_id, message):
-        t_log = t_log = time.strftime('%H:%M:%S', time.localtime(time.time()))
-        msg = '['+str(t_log)+'] ' + "@" + self_id + ": " + str(message)
-        send_dict = {'type': 'update', 'routing_table': {},'msg':msg }
-        self.tell_neighbor(recvSock, send_dict)
-  
-    def show_routingT(self,routin_table):
+
+    def show_routingT(self,routing_table):
         t_log = time.strftime('%H:%M:%S', time.localtime(time.time()))
         print("---------- Routing Table --------------------------------")
         print(" | "+ "--Time--"+ " | "+ "--Dest--" + "     | " + "---Link--- " + "      | " + "--Cost--" + " | ")
@@ -90,8 +75,6 @@ class route:
             link = self.routing_table[node]['link']
             print (" | " + str(t_log) +  " |" + str(node) +  "| " + link + "   |"+ str(self.routing_table[node]['cost']) + "         | ")
             print ("----------------------------------------------------------")
-
-            
 
     # thread to check to see if nodes have timed out
     def msg_handler(self,recvSock,rcv_data, tuple_addr):
@@ -155,15 +138,22 @@ class route:
                                 self.routing_table[dest]['link'] = addr
                                 self.table_changed = True
                 if table_changed:
-                    self.neigh_update(recvSock)
+                    self.update_neighbor(recvSock)
                     table_changed = False
 
         elif rcv_data['type'] == 0x02:
             if rcv_data['sender'] != self.self_id:
                 self.active_hist[addr] = t_now
                 print ('\n' + rcv_data['msg'])
-                send_dict = { 'type': 'update', 'msg': rcv_data['msg'], 'sender': rcv_data['sender'] }
-                self.tell_neighbor(recvSock, send_dict)
+                # send_dict = { 'type': 'update', 'msg': rcv_data['msg'], 'sender': rcv_data['sender'] }
+                # self.tell_neighbor(recvSock, send_dict)
+                self.msg_prompt(recvSock)     
+        elif rcv_data['type'] == 0x03:
+            if rcv_data['sender'] != self.self_id:
+                t_log = time.strftime('%H:%M:%S', time.localtime(time.time()))
+                print ('\n You have recived a file @['+str(t_log)+'] ' + rcv_data['file_Name']+'.txt')
+                with open('{}.txt'.format(rcv_data['file_Name']), 'wb').write(bytes(rcv_data['file'])) as f:
+                    f.close()
                 self.msg_prompt(recvSock)       
         # ------------ RECEIVED CLOSE MESSAGE --------------------- #
         elif rcv_data['type'] == 'close':
@@ -188,7 +178,7 @@ class route:
                         send_dict = { 'type': 'close', 'target': close_node, }
                         self.tell_neighbor(recvSock, send_dict)
             else:
-                self.neigh_update(recvSock)
+                self.update_neighbor(recvSock)
     def ip2int(self,ip_addr):
         if ip_addr == 'localhost':
             ip_addr = '127.0.0.1'
@@ -219,6 +209,24 @@ class route:
             send_dict = { 'type': 0x02, 'msg': msg, 'sender': self_id,'time':t_log}
             for sock in conn:
                 sock.send(send_dict)
+    def fileTransfer(self,recvSock,dest,file_name):
+        temp = self.self_id.split(":")
+        self_id=temp[0]
+        dest_ip = self.ip2int(dest)
+        dest_port = 9999
+        src_port = temp[1]
+        email= self.email
+        t_log = time.strftime('%H:%M:%S', time.localtime(time.time()))
+        # print(self.self_id)
+        text_inside="This is message in the file"
+        open('{}.txt'.format(file_name), 'wb').write(bytes(text_inside,'utf-8'))
+        f=open(file_name+".txt", 'r')
+        data=f.read(1024)
+        if data:
+            send_dict = { 'type': 0x03, 'file': data, 'sender': self_id,\
+            'reciever': dest_ip,'file_Name': file_name,'src_port': src_port, 'dest_port':dest_port,'email':email,'time':t_log}
+            self.tell_neighbor(recvSock,send_dict)
+
     def tell_neighbor(self,sock, payload):
             package = json.dumps(payload)
             #Let us Encrypt the whole message before chunking and sending it
@@ -233,7 +241,7 @@ class route:
                 temp = neighbor.split(":")
                 for chunk in self.chunks(enc_package, 100):
                     try:
-                        sock.sendto(chunk, (temp[0], int(temp[1])))      
+                        sock.sendto(chunk, (temp[0], int(temp[1])))    
                     except:
                         print("can not send data")
                     
