@@ -3,9 +3,12 @@
                                         --- NETWORK PROTOCOL APP README ---
 
 Group Members:                                                    
-            Abenezer Berhanu Weldegiorgis            
+            Abenezer  Weldegiorgis            
+            
             Krishna Vaishnav 
+            
             Tedel Baca 
+
 Submited to: 
            Professor Olaf Maennel  
            May 28,2018    
