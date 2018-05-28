@@ -23,11 +23,16 @@ In order to run this program it is required to use python version >=3.5 and test
 
 To run this program first we need to install "pgpy" library with "pip3 install pgpy" and also make sure you have installed  pycrypto module.
 
-##Defined Modules: 
-   ###CLI.py: Contains mainly menu and pre defined src and dest port which is 9999.
-   ###message.py: Is the main module of the program which contains the nodes message reciving and sending functions.
-   ###packet_route.py: Consists of different functions which are used to handle and route message
-   ###encryption.py: This module contains functions which are used to generate certificate based on plus encryption and decription methods based on pgp.
+Defined Modules: 
+   
+   CLI.py: Contains mainly menu and pre defined src and dest port which is 9999.
+   
+   message.py: Is the main module of the program which contains the nodes message reciving and sending functions.
+   
+   packet_route.py: Consists of different functions which are used to handle and route message
+   
+   encryption.py: This module contains functions which are used to generate certificate based on plus encryption and decription methods based on pgp.
+
 This program has a CLI and is compatible with Python3.5  so to run it we have the following procedure:
 
 1. In Linux terminal write the following command: $python3.5 message.py
