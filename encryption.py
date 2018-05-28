@@ -33,16 +33,16 @@ class Encryption:
         hashes=[HashAlgorithm.SHA512],
         ciphers=[PubKeyAlgorithm.RSAEncryptOrSign, SymmetricKeyAlgorithm.AES256],
         compression=[CompressionAlgorithm.ZLIB, CompressionAlgorithm.BZ2, CompressionAlgorithm.ZIP, CompressionAlgorithm.Uncompressed])
-      open('{}.asc'.format(pair_name), 'wb').write(bytes(key))
+      open('{}.asc'.format(pair_name), 'wb').write(bytes(key))#generate certificate and write on file
  
   @staticmethod
-  def encrypt(data, key='first'):
+  def encrypt(data, key='first'):#Encrypt the incoming data with first public key file
     k = Encryption.get_key(key)
     m = k.pubkey.encrypt(pgpy.PGPMessage.new(data), cipher=SymmetricKeyAlgorithm.AES256)
     return bytes(m)
  
   @staticmethod
-  def decrypt(data, key='first'):
+  def decrypt(data, key='first'):#Decrypt the incoming data with first private key file
 
     k = Encryption.get_key(key)
     with warnings.catch_warnings():

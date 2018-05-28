@@ -6,13 +6,13 @@ class main:
         print("!-Network Protocol Design-!")        
         print("!-------------------------!")
         pear_ip=input("Please input peer IP to connet to chat room:  ")
-        return pear_ip
+        return pear_ip# return neighbour Ip
 
     def welcome(self):
         print("!--------------------------!")
         print("!-Welcome to the chat room-!")        
         print("!--------------------------!")
-    def menu(self):
+    def menu(self):#main menu return option input
          try:
             self.welcome()
             option=int(input("!-Please use\
@@ -33,29 +33,27 @@ class main:
     def private_msg(self):
          self.welcome()
          dest_addr=input("Input destination address: ")
-         return dest_addr
+         return dest_addr#return destination address
     def node_id(self):
         email =input("Please input your email: ")
         mail =hashlib.md5(email.encode('utf-8'))
         hash_mail = mail.hexdigest()
-        return hash_mail
+        return hash_mail#return MD5 hash of node email
     def src_port(self):
-        src=int(input("Please input src port: "))
-        return src
+        return 9999 #used us source port "Lestning port"
     def dest_port(self):
         return 9999
     def peer_port(self):
-        listen=input("Please input other port: ")
-        return listen
+        return "9999"#used as neighbour port
     def cost_matrix(self):
         cost= int(input("Please input link cost of the node: "))
-        return cost
+        return cost#return cost of the node
     def time_out(self):
-        return 30
+        return 30#return time out(update time)
     def packet_type(self,typ):
         if typ == "data":
-            return 0x02
+            return 0x02#return 2 if message is data
         elif typ == "conf":
-            return 0x04
+            return 0x04#return 4 if message is configuration(authorization)
         else:
             print("Packet Type Error!!")

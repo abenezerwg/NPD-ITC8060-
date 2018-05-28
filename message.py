@@ -6,27 +6,26 @@ import sys
 import json
 import os
 import select
-from main import main
+from CLI import main
 from packet_route import route
 from encryption import Encryption
 pgp = Encryption()#Instantiate the Encryption class "to be used latter"
-main = main()
-router= route()
-RECV_BUFFER=1024
-zero = 0
-protocol = 17
-conn={}
-chunk=[]
-d_Chunk=[]
+main = main()#Instantiate the main class "to be used latter"
+router= route()#Instantiate the route class "to be used latter"
+RECV_BUFFER=1024#set initial buffer size 1024
+conn={}#Creat Connection list to hold connections
+chunk=[]#creat Chunk list to hold chunk packets
 def recieve_msg(_socket,listen,peer_port,peer_ip,cost,node_id):
-    m_data=""
+    """
+    This Method will be used to recive any data from sender 
+    """
     _socket.bind(('', listen))
     host = socket.gethostbyname(socket.gethostname())
     router.self_id = str(host) + ":" + str(listen)
     #set neighbour IP and initialize routing table
     n_ip = socket.gethostbyname(peer_ip)
     neighbor_id = str(n_ip) + ":" + peer_port
-    #Fill routing data
+    #Fill nodes routing data
     router.routing_table[neighbor_id] = {}
     router.routing_table[neighbor_id]['cost'] = cost
     router.routing_table[neighbor_id]['link'] = neighbor_id
@@ -48,15 +47,15 @@ def recieve_msg(_socket,listen,peer_port,peer_ip,cost,node_id):
         for sock in read_sockets:
             if sock == _socket:
                 data, addr = _socket.recvfrom(RECV_BUFFER) 
-                conn[addr] = node_id
+                conn[addr] = node_id#add node Id to connection list
                 if not os.path.isfile("first.asc"):
                     # generate keys first
-                    pgp.generate_certificates()
-                chunk.append(data)
-                merge_data=merge(chunk)
+                    pgp.generate_certificates()#if there is no key generate a key
+                chunk.append(data)#append incomming consiquitive packets
+                merge_data=merge(chunk)#merge packets in chunk list
                 try:
                     """
-                    Decrypt the merged file a if there is data let's decrypt 
+                    This block Decrypt the merged file a if there is data let's decrypt 
                         it and load it to the json to be sent to msg_handler method
                     """
                     decrypted = pgp.decrypt(merge_data)
@@ -68,16 +67,16 @@ def recieve_msg(_socket,listen,peer_port,peer_ip,cost,node_id):
                     pass 
                 
             else:
-                data = sys.stdin.readline().rstrip()
-                if data=="MENU":
+                data = sys.stdin.readline().rstrip()#read command line and clear empty space
+                if data=="MENU":#return to menu if user type MENU in uppercase
                     os.system("clear")
                     login_menu(_socket,conn)
                 else:
-                    router.send_prv_msg(_socket,router.dest_id,data)
+                    router.send_prv_msg(_socket,router.dest_id,data)#Other wise send message to destination node 
                     router.msg_prompt()
     _socket.close()
 
-def merge(data):
+def merge(data):# merge incoming chunked packets in to one stream of byte data
     m_data=b''
     for x in data:
         m_data +=x
@@ -87,7 +86,7 @@ def time_update(serverSocket,timeout_interval):
     router.neighbour_update(serverSocket)
 def route_update(serverSocket,timeout_interval):
         router.node_timer(serverSocket)
-def login_menu(_socket,conn):
+def login_menu(_socket,conn):#login menu to be called on sending message
     option =main.menu()
     if option == 1:
         dst_id = input("Input Destination Address: ")
@@ -108,6 +107,9 @@ def login_menu(_socket,conn):
         router.close()
         
 if __name__ == '__main__':
+    """
+    Here we  initialise variables which are used to initialise the route module
+    """
     os.system("clear")
     peer_ip = main.login()
     peer_port=main.peer_port()

@@ -11,10 +11,10 @@ import os
 import pgpy
 # from __future__ import division
 import sys
-from main import main
+from CLI import main
 from encryption import Encryption
 msg_Enc=Encryption()#Instantiate the Encryption class "to be used latter"
-main= main()
+main= main()#Instantiate the Encryption class "to be used latter"
 class route:
     
     def __init__(self):
@@ -29,25 +29,10 @@ class route:
         self.active_hist = {}    # Active nodes for the timer
         self.conn={}
         
-    def msg_prompt(self):
+    def msg_prompt(self):#prompt user to input message
         sys.stdout.write('Type MENU to go back, Msg: > ')
         sys.stdout.flush()
-    def prompt(self,_socket):
-        import message
-        message.login_menu(_socket,self.conn)
-        sys.stdout.flush()
-        
-    def verify_checksum(self,data, checksum):
-        data_len = len(data)
-        if (data_len%2) == 1:
-            data_len += 1
-            data += struct.pack('!B', 0)
-        
-        for i in range(0, len(data), 2):
-            w = (data[i] << 8) + (data[i + 1])
-            checksum += w
-            checksum = (checksum >> 16) + (checksum & 0xFFFF)
-    
+
     def neighbour_update(self,recvSock): #send this node's routing table to all neighbors
         for neighbor in copy.deepcopy(self.neighbors):
             temp = neighbor.split(':') 
@@ -185,7 +170,7 @@ class route:
                     self.neighbour_update(recvSock)
                     table_changed = False
 
-        elif rcv_data['type'] == 0x02:
+        elif rcv_data['type'] == 0x02:#message recived with type 0X02
             if rcv_data['sender'] != self.self_id: 
                 self.active_hist[addr] = t_now
                 print ('\n' + rcv_data['msg'])
@@ -193,7 +178,7 @@ class route:
                 self.tell_neighbor(recvSock, send_dict)
                 self.msg_prompt()
         
-        elif rcv_data['type'] == 0x03:
+        elif rcv_data['type'] == 0x03:#file recieved with type 0X03
             if rcv_data['sender'] != self.self_id:
                 t_log = time.strftime('%H:%M:%S', time.localtime(time.time()))
                 print ('\n You have recieved a file @['+str(t_log)+'] ' + rcv_data['file_Name']+'.txt')
@@ -229,31 +214,16 @@ class route:
                 self.neighbour_update(recvSock)
     
     
-    def ip2int(self,ip_addr):
+    def ip2int(self,ip_addr):#change localhost to 127.0.0.1 and chnge string IP to int
         if ip_addr == 'localhost':
             ip_addr = '127.0.0.1'
         return [int(x) for x in ip_addr.split('.')]
-    def checksum_func(self,data):
-        checksum = 0
-        data_len = len(data)
-        if (data_len%2) == 1:
-            data_len += 1
-            data += struct.pack('!B', 0)
-        
-        for i in range(0, len(data), 2):
-            w = (data[i] << 8) + (data[i + 1])
-            checksum += w
-
-        checksum = (checksum >> 16) + (checksum & 0xFFFF)
-        checksum = ~checksum&0xFFFF
-        return checksum	
-   
-    def chunks(self,lst, n):
+    def chunks(self,lst, n):#chunk incoming messages to n sized packets 
         "Yield successive n-sized chunks from lst"
         for i in range(0, len(lst), n):
             yield lst[i:i+n]
 
-    def send_prv_msg(self,recvSock,dst_id,send_msg):
+    def send_prv_msg(self,recvSock,dst_id,send_msg):#send private message
         temp = self.self_id.split(":")
         self_id=temp[0]
         dest_ip = self.ip2int(dst_id)
@@ -265,7 +235,7 @@ class route:
         send_dict = { 'type': 0x02, 'msg': msg, 'sender': self_id,\
         'reciever': dest_ip,'src_port': src_port, 'dest_port':dest_port,'email':email }
         self.tell_neighbor(recvSock,send_dict)
-    def broadcast_msg(self,conn,_socket):
+    def broadcast_msg(self,conn,_socket):#brodcast message
             msg=input("input Message: ")
             temp = self.self_id.split(":")
             self_id=temp[0]
@@ -274,7 +244,7 @@ class route:
             send_dict = { 'type': 0x02, 'msg': msg, 'sender': self_id,'time':t_log}
             for sock in conn:
                 sock.send(send_dict)
-    def fileTransfer(self,recvSock,dest,file_name):
+    def fileTransfer(self,recvSock,dest,file_name):#transfer file
         temp = self.self_id.split(":")
         self_id=temp[0]
         dest_ip = self.ip2int(dest)
@@ -291,8 +261,7 @@ class route:
             send_dict = { 'type': 0x03, 'file': data, 'sender': self_id,\
             'reciever': dest_ip,'file_Name': file_name,'src_port': src_port, 'dest_port':dest_port,'email':email,'time':t_log}
             self.tell_neighbor(recvSock,send_dict)
-    def tell_neighbor(self,sock, payload):
-        
+    def tell_neighbor(self,sock, payload):#send data to direct neighbour 
             package = json.dumps(payload)
             #Let us Encrypt the whole message before chunking and sending it
             if not os.path.isfile("first.asc"):
