@@ -241,8 +241,22 @@ class route:
             t_log = time.strftime('%H:%M:%S', time.localtime(time.time()))
             msg = '['+str(t_log)+'] ' + "@" + self_id + ": " + str(msg)
             send_dict = { 'type': 0x02, 'msg': msg, 'sender': self_id,'time':t_log}
+            package = json.dumps(send_dict)
+            #Let us Encrypt the whole message before chunking and sending it
+            
+            if not os.path.isfile("first.asc"):
+                # generate keys first
+                msg_Enc.generate_certificates()
+            try:
+                 enc_package= msg_Enc.encrypt(package)
+            except pgpy.errors.PGPError:
+                print('Encryption failed!')
             for sock in conn:
-                sock.send(send_dict)
+                for chunk in self.chunks(enc_package, 100):
+                    try:
+                       _socket.sendto(chunk, sock)
+                    except:
+                        print("can not send data")
     def fileTransfer(self,recvSock,dest,file_name):#transfer file
         temp = self.self_id.split(":")
         self_id=temp[0]

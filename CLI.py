@@ -26,7 +26,7 @@ class main:
             print("!-------------------------!")
             return option
          except:
-             print("Please Use the format <PMSG> <IP Address> <Conntent>")
+             print("Please imput correctly")
              self.menu()
         
         
