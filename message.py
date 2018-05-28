@@ -100,7 +100,9 @@ def login_menu(_socket,conn):#login menu to be called on sending message
         filename = input("Input file name: ")
         router.fileTransfer(_socket,dst_id,filename)
     elif option == 4:
+        os.system("clear")
         print("Online Nodes: ", conn)
+        login_menu(_socket,conn)
     elif option == 5:
         router.show_routingT(router.routing_table)
     elif option == 6:

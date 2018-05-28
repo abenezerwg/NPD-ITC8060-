@@ -37,7 +37,7 @@ This program has a CLI and is compatible with Python3.5  so to run it we have th
 
 1. In Linux terminal write the following command: $python3.5 message.py
 
-2. In our terminal we will see a new screen with an output: "Please input peer IP to connet to chat room:", and waits for our input so here we put our IP address in the network so that we can communicate in network with other nodes.
+2. In our terminal we will see a new screen with an output: "Please input peer IP to connet to chat room:", and waits for our input so here we put our IP address in the network so that we can communicate in network with other nodes, initialize chat by sending message to the destination node.
 
 3.We get an output: "Please input your email:", and here we input our email address
 
