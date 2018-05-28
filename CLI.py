@@ -26,7 +26,7 @@ class main:
             print("!-------------------------!")
             return option
          except:
-             print("Please imput correctly")
+             print("Please input correctly")
              self.menu()
         
         
