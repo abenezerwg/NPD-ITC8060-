@@ -1,10 +1,4 @@
-
-"""
-       NPD
-       @01-05-2018
-"""
 import threading
-import warnings
 import time
 import socket
 import struct
@@ -16,30 +10,33 @@ from main import main
 from packet_route import route
 from encryption import Encryption
 pgp = Encryption()#Instantiate the Encryption class "to be used latter"
-main = main()#Instantiate the main class "to be used latter"
-router= route()#Instantiate the router class "to be used latter"
+main = main()
+router= route()
 RECV_BUFFER=1024
+zero = 0
+protocol = 17
 conn={}
 chunk=[]
 d_Chunk=[]
 def recieve_msg(_socket,listen,peer_port,peer_ip,cost,node_id):
+    m_data=""
     _socket.bind(('', listen))
     host = socket.gethostbyname(socket.gethostname())
     router.self_id = str(host) + ":" + str(listen)
     #set neighbour IP and initialize routing table
     n_ip = socket.gethostbyname(peer_ip)
     neighbor_id = str(n_ip) + ":" + peer_port
-    #Fill node routing data
+    #Fill routing data
     router.routing_table[neighbor_id] = {}
     router.routing_table[neighbor_id]['cost'] = cost
     router.routing_table[neighbor_id]['link'] = neighbor_id
     router.routing_table[neighbor_id]['email'] = node_id
-    router.via_links[neighbor_id] = cost
-    router.neighbour[neighbor_id] = {}
+    router.adjacent_links[neighbor_id] = cost
+    router.neighbors[neighbor_id] = {}
+    router.time_out=main.time_out()
     router.email=node_id
     os.system("clear")
-    menu(_socket,conn,router.routing_table)
-    route_update(serverSocket)
+    login_menu(_socket,conn)
     while True:
         socket_list = [sys.stdin,_socket]
         try:
@@ -50,7 +47,7 @@ def recieve_msg(_socket,listen,peer_port,peer_ip,cost,node_id):
             break
         for sock in read_sockets:
             if sock == _socket:
-                data, addr = _socket.recvfrom(RECV_BUFFER)
+                data, addr = _socket.recvfrom(RECV_BUFFER) 
                 conn[addr] = node_id
                 if not os.path.isfile("first.asc"):
                     # generate keys first
@@ -62,62 +59,54 @@ def recieve_msg(_socket,listen,peer_port,peer_ip,cost,node_id):
                     Decrypt the merged file a if there is data let's decrypt 
                         it and load it to the json to be sent to msg_handler method
                     """
-                    if merge_data:
-                        decrypted = pgp.decrypt(merge_data)
-                        data = json.loads(decrypted)
-                        chunk[:]=[]
-                        router.msg_handler(_socket,data, addr)
-                        time.sleep(0.1)
-                    else:
-                        pass
+                    decrypted = pgp.decrypt(merge_data)
+                    data = json.loads(decrypted)
+                    chunk[:]=[]
+                    router.msg_handler(serverSocket,data, addr)
+                    time.sleep(0.1)
                 except:
-                    pass
-            else: 
-                menu(_socket,conn,router.routing_table)
-                sys.stdout.flush()
-            
+                    pass 
+                
+            else:
+                data = sys.stdin.readline().rstrip()
+                if data=="MENU":
+                    os.system("clear")
+                    login_menu(_socket,conn)
+                else:
+                    router.send_prv_msg(_socket,router.dest_id,data)
+                    router.msg_prompt()
     _socket.close()
-#The main Menu 
-def menu(_socket,conn,routin_table):
-    try:
-        main.welcome()
-        option=int(input("!-Please use\
-            ---!\n!-1)For Private msg--------!\
-            \n!-2)For Group message------!\
-            \n!-3)ForFile Transfer-------!\
-            \n!-4)List Users-------------!\
-            \n!-5)Show Routing Table-----!\
-            \n!-6)To Close-----!\
-            \n Choose:  "))
-        print("!-------------------------!")
-        if option == 1:
-            router.msg_prompt(_socket)
-        elif option == 2:
-            router.broadcast_msg(conn,_socket)
-        elif option == 3:
-            router.file_prompt(_socket)
-        elif option == 4:
-            pass
-        elif option == 5:
-            router.show_routingT(routin_table)
-        else:
-            print("Please input Correctly!")
-            menu(_socket,conn,routin_table)
-    except:
-        print("Error on Input!")
-        menu(_socket,conn,routin_table)
-def route_update(_socket,timeout_interval=10):
-        router.update_neighbor(_socket)
-        time = threading.Timer(timeout_interval, route_update, [timeout_interval])
-        time.setDaemon(True)
-        time.start()
-#Merge byte data on the chunk list and return data
+
 def merge(data):
     m_data=b''
     for x in data:
         m_data +=x
     return m_data 
-
+ # Function to creat a thread for Each node to sends whole table every 30 seconds 
+def time_update(serverSocket,timeout_interval):
+    router.neighbour_update(serverSocket)
+def route_update(serverSocket,timeout_interval):
+        router.node_timer(serverSocket)
+def login_menu(_socket,conn):
+    option =main.menu()
+    if option == 1:
+        dst_id = input("Input Destination Address: ")
+        content = input("Input your message: ")
+        router.dest_id=dst_id
+        router.send_prv_msg(_socket,dst_id,content)
+    elif option == 2:
+        router.broadcast_msg(conn,_socket)
+    elif option == 3:
+        dst_id = input("Input Destination Address: ")
+        filename = input("Input file name: ")
+        router.fileTransfer(_socket,dst_id,filename)
+    elif option == 4:
+        print("Online Nodes: ", conn)
+    elif option == 5:
+        router.show_routingT(router.routing_table)
+    elif option == 6:
+        router.close()
+        
 if __name__ == '__main__':
     os.system("clear")
     peer_ip = main.login()
@@ -126,17 +115,16 @@ if __name__ == '__main__':
     dest_port = main.dest_port()
     node_id= main.node_id()
     cost = main.cost_matrix()
-    time_out= 10
+    time_out= main.time_out()
     serverSocket = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
     serverSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, True)
-    t_recv = threading.Thread(target=recieve_msg, args=(serverSocket,src_port,peer_port,peer_ip,cost,node_id))
-    t_recv.start()
-    
-    
-    
-
-
-    
+    recieve_msg(serverSocket,src_port,peer_port,peer_ip,cost,node_id)
+    t = threading.Timer(time_out, time_update, [time_out])
+    t.setDaemon(True)
+    t.start()
+    time = threading.Timer(time_out, route_update, [time_out])
+    time.setDaemon(True)
+    time.start()
 
 
 
