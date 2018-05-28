@@ -45,8 +45,7 @@ This program has a CLI and is compatible with Python3.5  so to run it we have th
 
 5. After the first four steps a new terminal window will appear with the message: Welcome to the chat room. Here we have 6 options which we can choose for our chat application:
 
-Option !-1): For Private msg - Here we can send private messages between nodes. To do this we choose the destination address in "Input Destination Address:" field and then we write our message,
-*initializing conversation reqquires the recivers aknowledgment, after sending a any message from source node to the destination we can creat a session and start chating in order to go back to Menu we Type MENU (UPPER CASE).
+Option !-1): For Private msg - Here we can send private messages between nodes. To do this we choose the destination address in "Input Destination Address:" field and then we write our message, initializing conversation reqquires the recievers aknowledgment, by sending any message from source node to the destination, we can create a session and start chating in order to go back to Menu we Type MENU (UPPER CASE).
 *Up on sending of message the program dynamicaly generate files "pgp certificate: <first.asc,second.asc> which we will use for encryption and", "text file: for file transfer<file name.txt>"
 
 Option !-2): For Group message: - Here we can send broadcast message. We just input our messages and send it
