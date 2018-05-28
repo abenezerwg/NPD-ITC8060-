@@ -2,11 +2,13 @@
 
                                         --- NETWORK PROTOCOL APP README ---
 
-Group Members:                       Submited to: Professor Olaf Maennel                                 
-Abenezer Berhanu Weldegiorgis         May 28,2018     
-Krishna Vaishnav 
-Tedel Baca 
-
+Group Members:                                                    
+            Abenezer Berhanu Weldegiorgis            
+            Krishna Vaishnav 
+            Tedel Baca 
+Submited to: 
+           Professor Olaf Maennel  
+           May 28,2018    
 
 * This is a guide on how to use the our chat room application developed for Network Protocol Design project which was lectured by:  Professor Olaf Maennel.
 
