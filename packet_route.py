@@ -174,15 +174,14 @@ class route:
             if rcv_data['sender'] != self.self_id: 
                 self.active_hist[addr] = t_now
                 print ('\n' + rcv_data['msg'])
-                send_dict = { 'type': 'update', 'msg': rcv_data['msg'], 'sender': rcv_data['sender'] }
-                self.tell_neighbor(recvSock, send_dict)
                 self.msg_prompt()
         
         elif rcv_data['type'] == 0x03:#file recieved with type 0X03
             if rcv_data['sender'] != self.self_id:
                 t_log = time.strftime('%H:%M:%S', time.localtime(time.time()))
                 print ('\n You have recieved a file @['+str(t_log)+'] ' + rcv_data['file_Name']+'.txt')
-                open('{}.txt'.format(rcv_data['file_Name']), 'wb').write(bytes(rcv_data['file']))
+                with open('{}.txt'.format(rcv_data['file_Name']), 'wb').write(bytes(rcv_data['file'])) as f:
+                    f.close()
                 self.msg_prompt()
 
         # ------------ RECEIVED CLOSE MESSAGE --------------------- #
