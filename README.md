@@ -2,22 +2,8 @@
 
                                         --- NETWORK PROTOCOL APP README ---
 
-Group Members:                                                    
-            
-            Abenezer  Weldegiorgis            
-            
-            Krishna Vaishnav 
-            
-            Tedel Baca 
 
-Submited to: 
-           
-           Professor Olaf Maennel  
-           May 28,2018    
-
-* This is a guide on how to use the our chat room application developed for Network Protocol Design project which was lectured by:  Professor Olaf Maennel.
-
-The files of this application can be downloaded from the following link: https://github.com/Abenaman/NPD-ITC8060-
+* This is a guide on how to use the our chat room application developed for Network Protocol Design project:
 
 In order to run this program it is required to use python version >=3.5 and tested in a Linux environment but can run in Windows aswell.
 
@@ -58,14 +44,5 @@ Option !-5): Show Routing Table: Here we show the nodes distance vector or curre
 
 Option !-6): We close the application
 
-Reference: 
-
-Reference link : https://pythonexample.com/code/pgpy/ accessed on 21-05-2018
-
-Reference link :https://github.com/nschue/NetworksProject/blob/master/RouterClient.py accessed on 10-05-2018 
-
-Reference link  https://github.com/tummim/jaban-jargon accessed on 10-5-2018
-
-Reference link https://github.com/houluy/UDP/blob/master/udp.py accessed on 10-5-2018
 
 
