@@ -3,7 +3,7 @@
                                         --- NETWORK PROTOCOL APP README ---
 
 
-* This is a guide on how to use the our chat room application developed for Network Protocol Design project:
+* This is a guide on how to use our chat room application developed for Network Protocol Design project:
 
 In order to run this program it is required to use python version >=3.5 and tested in a Linux environment but can run in Windows aswell.
 
